@@ -18,6 +18,10 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('token/refresh/', views.token_refresh, name='token-refresh'),
 
+    # Forgot / reset password
+    path('forgot-password/', views.forgot_password, name='forgot-password'),
+    path('reset-password/', views.reset_password, name='reset-password'),
+
     # Profile (authenticated)
     path('me/', views.me, name='me'),
     path('me/update/', views.update_profile, name='update-profile'),
