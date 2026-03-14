@@ -22,8 +22,8 @@ class Property(models.Model):
         ('unfurnished', 'Unfurnished'),
     ]
     STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
+        ('available', 'Available'),
+        ('sold', 'Sold'),
     ]
 
     agent = models.ForeignKey(
@@ -41,7 +41,8 @@ class Property(models.Model):
     size_sqm = models.PositiveIntegerField(null=True, blank=True)
     furnishing = models.CharField(max_length=20, choices=FURNISHING_CHOICES, blank=True)
     price = models.DecimalField(max_digits=15, decimal_places=2)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
     front_image = models.ImageField(upload_to='properties/images/', null=True, blank=True)
     side_image = models.ImageField(upload_to='properties/images/', null=True, blank=True)
     back_image = models.ImageField(upload_to='properties/images/', null=True, blank=True)

@@ -13,7 +13,7 @@ class PropertySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'property_type', 'listing_type', 'address',
             'city_state', 'bedrooms', 'bathrooms', 'size_sqm', 'furnishing',
-            'price', 'status', 'front_image', 'side_image', 'back_image',
+            'price', 'description', 'status', 'front_image', 'side_image', 'back_image',
             'front_image_url', 'side_image_url', 'back_image_url',
             'ownership_document', 'views_count', 'inquiries_count',
             'created_at', 'agent_name',
