@@ -227,11 +227,7 @@ class MeSerializer(serializers.ModelSerializer):
 
     def get_avatarUrl(self, obj):
         request = self.context.get('request')
-        # Profile picture can be on the user directly or on the profile model
         pic = obj.profile_picture
-        if not pic:
-            p = self._profile(obj)
-            pic = p.profile_picture if p else None
         if pic and request:
             return request.build_absolute_uri(pic.url)
         return None

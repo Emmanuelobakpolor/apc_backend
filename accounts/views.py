@@ -161,7 +161,11 @@ def agent_signup(request):
     user = serializer.save()
     tokens = get_tokens_for_user(user)
     return Response(
-        {'detail': 'Agent account created successfully.', **tokens},
+        {
+            'detail': 'Agent account created successfully.',
+            'user': MeSerializer(user, context={'request': request}).data,
+            **tokens,
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -175,7 +179,11 @@ def owner_signup(request):
     user = serializer.save()
     tokens = get_tokens_for_user(user)
     return Response(
-        {'detail': 'Owner account created successfully.', **tokens},
+        {
+            'detail': 'Owner account created successfully.',
+            'user': MeSerializer(user, context={'request': request}).data,
+            **tokens,
+        },
         status=status.HTTP_201_CREATED,
     )
 
