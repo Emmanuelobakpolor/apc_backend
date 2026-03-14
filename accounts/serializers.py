@@ -25,7 +25,11 @@ class RegisterSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     phone = serializers.CharField(max_length=30, required=False, allow_blank=True)
-    account_type = serializers.ChoiceField(choices=['user', 'agent', 'property_owner'])
+    account_type = serializers.ChoiceField(
+        choices=['user', 'agent', 'property_owner'],
+        default='user',
+        required=False,
+    )
     password = serializers.CharField(min_length=8, write_only=True)
     confirm_password = serializers.CharField(min_length=8, write_only=True)
 
