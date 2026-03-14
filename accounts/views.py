@@ -254,6 +254,71 @@ def update_profile(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    """Send an OTP to the email for password reset."""
+    email = request.data.get('email', '').lower().strip()
+    if not email:
+        return Response({'detail': 'email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Always send 200 — don't reveal whether email exists
+    if User.objects.filter(email=email).exists():
+        try:
+            send_otp_email(email)
+        except Exception:
+            return Response(
+                {'detail': 'Failed to send OTP. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    return Response({'detail': 'If that email is registered, a reset code has been sent.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    """Verify OTP and set a new password."""
+    email = request.data.get('email', '').lower().strip()
+    otp_code = request.data.get('otp', '').strip()
+    new_password = request.data.get('new_password', '')
+    confirm_password = request.data.get('confirm_password', '')
+
+    if not all([email, otp_code, new_password, confirm_password]):
+        return Response(
+            {'detail': 'email, otp, new_password, and confirm_password are required.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if new_password != confirm_password:
+        return Response(
+            {'detail': 'Passwords do not match.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if len(new_password) < 8:
+        return Response(
+            {'detail': 'Password must be at least 8 characters.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not verify_otp(email, otp_code):
+        return Response(
+            {'detail': 'Invalid or expired OTP.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    user.set_password(new_password)
+    user.is_active = True  # activate in case they were unverified
+    user.save(update_fields=['password', 'is_active'])
+
+    return Response({'detail': 'Password reset successfully. You can now log in.'})
+
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_password(request):
     old_password = request.data.get('old_password')
