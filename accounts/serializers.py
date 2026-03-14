@@ -100,6 +100,7 @@ class AgentSignupSerializer(serializers.Serializer):
             password=validated_data.pop('password'),
             full_name=validated_data.pop('full_name'),
             role='agent',
+            is_active=True,
         )
         AgentProfile.objects.create(
             user=user,
@@ -141,6 +142,7 @@ class OwnerSignupSerializer(serializers.Serializer):
             password=validated_data.pop('password'),
             full_name=validated_data.pop('full_name'),
             role='owner',
+            is_active=True,
         )
         OwnerProfile.objects.create(
             user=user,
