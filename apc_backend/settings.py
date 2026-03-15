@@ -142,11 +142,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# ── Email ─────────────────────────────────────────────────────────────────────────
-EMAIL_BACKEND = config(
-    'EMAIL_BACKEND',
-    default='django.core.mail.backends.console.EmailBackend',
-)
+# ── Email (SendGrid) ──────────────────────────────────────────────────────────────
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
+# Set to True locally so emails are validated but not actually sent during development
+SENDGRID_SANDBOX_MODE_IN_DEBUG = config('SENDGRID_SANDBOX_MODE_IN_DEBUG', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@apc.com')
 
 # ── OTP ───────────────────────────────────────────────────────────────────────────

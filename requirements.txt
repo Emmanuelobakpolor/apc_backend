@@ -9,3 +9,4 @@ cloudinary==1.41.0
 django-cloudinary-storage==0.3.0
 gunicorn==21.2.0
 whitenoise==6.7.0
+django-sendgrid-v5==1.2.3
