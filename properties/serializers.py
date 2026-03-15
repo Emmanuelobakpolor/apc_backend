@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Property, Inquiry
+from .models import Property, Inquiry, InquiryReply
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -29,7 +29,6 @@ class PropertySerializer(serializers.ModelSerializer):
         return obj.agent.get_full_name()
 
     def get_agent_phone(self, obj):
-        # Prefer profile phone_number (AgentProfile / OwnerProfile), fall back to User.phone
         try:
             phone = obj.agent.agent_profile.phone_number
             if phone:
@@ -63,17 +62,31 @@ class PropertySerializer(serializers.ModelSerializer):
         return None
 
 
+class InquiryReplySerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InquiryReply
+        fields = ['id', 'message', 'sender_name', 'created_at']
+        read_only_fields = ['id', 'sender_name', 'created_at']
+
+    def get_sender_name(self, obj):
+        return obj.sender.get_full_name() if obj.sender else ''
+
+
 class InquirySerializer(serializers.ModelSerializer):
     property_title = serializers.SerializerMethodField()
     property_location = serializers.SerializerMethodField()
+    replies = InquiryReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = Inquiry
         fields = [
             'id', 'property', 'property_title', 'property_location',
-            'name', 'phone', 'email', 'role', 'is_read', 'created_at',
+            'name', 'phone', 'email', 'role', 'message', 'is_read', 'created_at',
+            'replies',
         ]
-        read_only_fields = ['id', 'property', 'property_title', 'property_location', 'is_read', 'created_at']
+        read_only_fields = ['id', 'property', 'property_title', 'property_location', 'is_read', 'created_at', 'replies']
 
     def get_property_title(self, obj):
         return obj.property.title

@@ -81,6 +81,7 @@ class Inquiry(models.Model):
     phone = models.CharField(max_length=30)
     email = models.EmailField()
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True)
+    message = models.TextField(blank=True, default='')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -89,3 +90,25 @@ class Inquiry(models.Model):
 
     def __str__(self):
         return f'Inquiry from {self.name} on {self.property.title}'
+
+
+class InquiryReply(models.Model):
+    inquiry = models.ForeignKey(
+        Inquiry,
+        on_delete=models.CASCADE,
+        related_name='replies',
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='inquiry_replies',
+    )
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Reply by {self.sender} on inquiry {self.inquiry_id}'

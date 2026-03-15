@@ -4,8 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.db.models import F
-from .models import Property, Inquiry
-from .serializers import PropertySerializer, InquirySerializer
+from .models import Property, Inquiry, InquiryReply
+from .serializers import PropertySerializer, InquirySerializer, InquiryReplySerializer
 
 
 @api_view(['GET'])
@@ -134,7 +134,7 @@ def property_update(request, pk):
 def send_inquiry(request, pk):
     """Any authenticated user sends an inquiry about a property."""
     try:
-        prop = Property.objects.get(pk=pk, status='active')
+        prop = Property.objects.get(pk=pk, status='available')
     except Property.DoesNotExist:
         return Response({'detail': 'Property not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -156,7 +156,7 @@ def my_inquiries(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    inquiries = Inquiry.objects.filter(property__agent=request.user)
+    inquiries = Inquiry.objects.filter(property__agent=request.user).prefetch_related('replies')
 
     property_id = request.GET.get('property')
     if property_id:
@@ -182,3 +182,54 @@ def mark_inquiry_read(request, pk):
     inquiry.is_read = True
     inquiry.save(update_fields=['is_read'])
     return Response({'detail': 'Marked as read.'})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_inquiry(request, pk):
+    """Agent/owner deletes an entire inquiry and its replies."""
+    try:
+        inquiry = Inquiry.objects.get(pk=pk, property__agent=request.user)
+    except Inquiry.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    inquiry.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def inquiry_replies(request, pk):
+    """List or create replies for an inquiry owned by the logged-in user."""
+    try:
+        inquiry = Inquiry.objects.get(pk=pk, property__agent=request.user)
+    except Inquiry.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = InquiryReplySerializer(inquiry.replies.all(), many=True)
+        return Response(serializer.data)
+
+    serializer = InquiryReplySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(inquiry=inquiry, sender=request.user)
+        if not inquiry.is_read:
+            inquiry.is_read = True
+            inquiry.save(update_fields=['is_read'])
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_inquiry_reply(request, pk, reply_id):
+    """Agent/owner deletes a specific reply message."""
+    try:
+        reply = InquiryReply.objects.get(
+            pk=reply_id,
+            inquiry__pk=pk,
+            inquiry__property__agent=request.user,
+        )
+    except InquiryReply.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    reply.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
