@@ -44,21 +44,18 @@ class PropertySerializer(serializers.ModelSerializer):
         return obj.agent.phone or ''
 
     def get_front_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.front_image and request:
-            return request.build_absolute_uri(obj.front_image.url)
+        if obj.front_image:
+            return obj.front_image.url
         return None
 
     def get_side_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.side_image and request:
-            return request.build_absolute_uri(obj.side_image.url)
+        if obj.side_image:
+            return obj.side_image.url
         return None
 
     def get_back_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.back_image and request:
-            return request.build_absolute_uri(obj.back_image.url)
+        if obj.back_image:
+            return obj.back_image.url
         return None
 
 
