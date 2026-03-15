@@ -105,6 +105,7 @@ class InquiryReply(models.Model):
         related_name='inquiry_replies',
     )
     message = models.TextField()
+    is_read = models.BooleanField(default=False)  # recipient has read this message
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

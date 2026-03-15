@@ -233,3 +233,83 @@ def delete_inquiry_reply(request, pk, reply_id):
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
     reply.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ── User-facing notification / chat endpoints ─────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_sent_inquiries(request):
+    """User retrieves their own sent inquiries with all replies (chat threads)."""
+    inquiries = Inquiry.objects.filter(sender=request.user).prefetch_related('replies')
+    serializer = InquirySerializer(inquiries, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_unread_count(request):
+    """Total unread agent/owner replies on the user's sent inquiries."""
+    count = InquiryReply.objects.filter(
+        inquiry__sender=request.user,
+        is_read=False,
+    ).exclude(sender=request.user).count()
+    return Response({'unread_count': count})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def user_inquiry_reply(request, pk):
+    """User sends a follow-up message in their own inquiry thread."""
+    try:
+        inquiry = Inquiry.objects.get(pk=pk, sender=request.user)
+    except Inquiry.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = InquiryReplySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(inquiry=inquiry, sender=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def user_mark_inquiry_read(request, pk):
+    """User marks all agent/owner replies in their thread as read."""
+    try:
+        inquiry = Inquiry.objects.get(pk=pk, sender=request.user)
+    except Inquiry.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    inquiry.replies.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
+    return Response({'detail': 'Marked as read.'})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def user_delete_inquiry(request, pk):
+    """User deletes their own inquiry thread entirely."""
+    try:
+        inquiry = Inquiry.objects.get(pk=pk, sender=request.user)
+    except Inquiry.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    inquiry.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def user_delete_reply(request, pk, reply_id):
+    """User deletes one of their own reply messages in a thread."""
+    try:
+        reply = InquiryReply.objects.get(
+            pk=reply_id,
+            inquiry__pk=pk,
+            inquiry__sender=request.user,
+            sender=request.user,
+        )
+    except InquiryReply.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    reply.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

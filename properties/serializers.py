@@ -64,32 +64,48 @@ class PropertySerializer(serializers.ModelSerializer):
 
 class InquiryReplySerializer(serializers.ModelSerializer):
     sender_name = serializers.SerializerMethodField()
+    sender_id = serializers.SerializerMethodField()
 
     class Meta:
         model = InquiryReply
-        fields = ['id', 'message', 'sender_name', 'created_at']
-        read_only_fields = ['id', 'sender_name', 'created_at']
+        fields = ['id', 'message', 'sender_name', 'sender_id', 'is_read', 'created_at']
+        read_only_fields = ['id', 'sender_name', 'sender_id', 'is_read', 'created_at']
 
     def get_sender_name(self, obj):
         return obj.sender.get_full_name() if obj.sender else ''
+
+    def get_sender_id(self, obj):
+        return obj.sender_id
 
 
 class InquirySerializer(serializers.ModelSerializer):
     property_title = serializers.SerializerMethodField()
     property_location = serializers.SerializerMethodField()
+    agent_name = serializers.SerializerMethodField()
     replies = InquiryReplySerializer(many=True, read_only=True)
+    unread_reply_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Inquiry
         fields = [
-            'id', 'property', 'property_title', 'property_location',
+            'id', 'property', 'property_title', 'property_location', 'agent_name',
             'name', 'phone', 'email', 'role', 'message', 'is_read', 'created_at',
-            'replies',
+            'replies', 'unread_reply_count',
         ]
-        read_only_fields = ['id', 'property', 'property_title', 'property_location', 'is_read', 'created_at', 'replies']
+        read_only_fields = [
+            'id', 'property', 'property_title', 'property_location', 'agent_name',
+            'is_read', 'created_at', 'replies', 'unread_reply_count',
+        ]
 
     def get_property_title(self, obj):
         return obj.property.title
 
     def get_property_location(self, obj):
         return obj.property.city_state or obj.property.address
+
+    def get_agent_name(self, obj):
+        return obj.property.agent.get_full_name()
+
+    def get_unread_reply_count(self, obj):
+        # Count replies not sent by the inquiry sender that are unread
+        return obj.replies.exclude(sender=obj.sender).filter(is_read=False).count()
