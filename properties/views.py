@@ -313,3 +313,39 @@ def user_delete_reply(request, pk, reply_id):
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
     reply.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ── Admin endpoints ─────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_all_properties(request):
+    if request.user.role != 'admin':
+        return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+    qs = Property.objects.select_related('agent').order_by('-created_at')
+    agent_id = request.query_params.get('agent')
+    if agent_id:
+        qs = qs.filter(agent_id=agent_id)
+    search = request.query_params.get('search', '')
+    if search:
+        from django.db.models import Q as DQ
+        qs = qs.filter(
+            DQ(title__icontains=search) |
+            DQ(city_state__icontains=search) |
+            DQ(address__icontains=search)
+        )
+    serializer = PropertySerializer(qs, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_delete_property(request, pk):
+    if request.user.role != 'admin':
+        return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        prop = Property.objects.get(pk=pk)
+    except Property.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    prop.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

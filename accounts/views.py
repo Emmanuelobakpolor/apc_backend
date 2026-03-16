@@ -1,8 +1,9 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import User
@@ -15,8 +16,14 @@ from .serializers import (
     LoginSerializer,
     MeSerializer,
     UpdateProfileSerializer,
+    AdminUserSerializer,
 )
 from .utils import send_otp_email, verify_otp
+
+
+class IsAdminRole(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'admin'
 
 
 def get_tokens_for_user(user):
@@ -342,3 +349,59 @@ def change_password(request):
     request.user.set_password(new_password)
     request.user.save()
     return Response({'detail': 'Password changed successfully.'})
+
+
+# ── Admin endpoints ─────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAdminRole])
+def admin_stats(request):
+    from properties.models import Property
+    return Response({
+        'total_users': User.objects.count(),
+        'users': User.objects.filter(role='user').count(),
+        'agents': User.objects.filter(role='agent').count(),
+        'owners': User.objects.filter(role='owner').count(),
+        'total_properties': Property.objects.count(),
+        'available_properties': Property.objects.filter(status='available').count(),
+        'sold_properties': Property.objects.filter(status='sold').count(),
+        'recent_users': AdminUserSerializer(
+            User.objects.order_by('-date_joined')[:5], many=True
+        ).data,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminRole])
+def admin_users_list(request):
+    role = request.query_params.get('role', '')
+    search = request.query_params.get('search', '')
+    qs = User.objects.all().order_by('-date_joined')
+    if role:
+        qs = qs.filter(role=role)
+    if search:
+        qs = qs.filter(Q(full_name__icontains=search) | Q(email__icontains=search))
+    return Response(AdminUserSerializer(qs, many=True).data)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminRole])
+def admin_toggle_user(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    user.is_active = not user.is_active
+    user.save(update_fields=['is_active'])
+    return Response({'is_active': user.is_active})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminRole])
+def admin_delete_user(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

@@ -281,3 +281,14 @@ class UpdateProfileSerializer(serializers.Serializer):
             profile.save()
 
         return user
+
+
+# ── Admin ───────────────────────────────────────────────────────────────────────
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'full_name',
+            'role', 'phone', 'location', 'is_active', 'date_joined',
+        ]

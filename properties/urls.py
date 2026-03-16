@@ -24,4 +24,8 @@ urlpatterns = [
     path("<int:pk>/price/", views.property_update_price, name="property-update-price"),
     path("<int:pk>/update/", views.property_update, name="property-update"),
     path("<int:pk>/inquire/", views.send_inquiry, name="send-inquiry"),
+
+    # Admin
+    path("admin/all/", views.admin_all_properties, name="admin-all-properties"),
+    path("admin/<int:pk>/delete/", views.admin_delete_property, name="admin-delete-property"),
 ]

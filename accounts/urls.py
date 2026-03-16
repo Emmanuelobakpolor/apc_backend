@@ -26,4 +26,10 @@ urlpatterns = [
     path('me/', views.me, name='me'),
     path('me/update/', views.update_profile, name='update-profile'),
     path('me/password/', views.change_password, name='change-password'),
+
+    # Admin
+    path('admin/stats/', views.admin_stats, name='admin-stats'),
+    path('admin/users/', views.admin_users_list, name='admin-users'),
+    path('admin/users/<int:pk>/toggle/', views.admin_toggle_user, name='admin-toggle-user'),
+    path('admin/users/<int:pk>/delete/', views.admin_delete_user, name='admin-delete-user'),
 ]
