@@ -27,6 +27,9 @@ urlpatterns = [
     path('me/update/', views.update_profile, name='update-profile'),
     path('me/password/', views.change_password, name='change-password'),
 
+    # One-time setup
+    path('create-admin/', views.create_admin, name='create-admin'),
+
     # Admin
     path('admin/stats/', views.admin_stats, name='admin-stats'),
     path('admin/users/', views.admin_users_list, name='admin-users'),

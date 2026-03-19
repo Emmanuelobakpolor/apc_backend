@@ -351,6 +351,39 @@ def change_password(request):
     return Response({'detail': 'Password changed successfully.'})
 
 
+# ── One-time admin setup ────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_admin(request):
+    """
+    POST /api/auth/create-admin/
+    Body: { "secret": "apc-setup-2026", "email": "admin@apc.com", "password": "admin123" }
+    Creates or updates the admin user.
+    """
+    if request.data.get('secret') != 'apc-setup-2026':
+        return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+
+    email    = request.data.get('email', 'admin@apc.com')
+    password = request.data.get('password', 'admin123')
+
+    user, created = User.objects.get_or_create(email=email)
+    user.set_password(password)
+    user.role      = 'admin'
+    user.is_active = True
+    user.is_staff  = True
+    user.first_name = user.first_name or 'Admin'
+    user.last_name  = user.last_name  or 'User'
+    user.save()
+
+    return Response({
+        'detail': 'Admin user created.' if created else 'Admin user updated.',
+        'email': user.email,
+        'role': user.role,
+        'is_active': user.is_active,
+    })
+
+
 # ── Admin endpoints ─────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
