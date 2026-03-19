@@ -204,7 +204,7 @@ class MeSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name', 'fullName',
-            'accountType', 'phone', 'phoneNumber', 'location', 'address',
+            'role', 'accountType', 'phone', 'phoneNumber', 'location', 'address',
             'avatarUrl', 'date_joined',
         ]
 
