@@ -12,7 +12,7 @@ from .serializers import PropertySerializer, InquirySerializer, InquiryReplySeri
 @permission_classes([IsAuthenticated])
 def property_listings(request):
     """All active listings — visible to every authenticated user."""
-    properties = Property.objects.filter(status='active')
+    properties = Property.objects.filter(status='available')
 
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
